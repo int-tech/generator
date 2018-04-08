@@ -27,12 +27,12 @@ class cvae(object):
         :param args: tuple(mean, log sigma), parameters of Gaussian distribution for latent variable
         :return: sampling value generated from Gaussian distribution
         """
-        z_mean, z_log_sigma = args
+        mean, log_sigma = args
 
         #TODO: generating random variable epsilon ~ N(0, I)
         epsilon = 0
 
-        #TODO: return random variable z. calculating z ~ N(z_mean, exp(z_log_sigma)) using z = mean + exp(z_log_sigma) * epsilon
+        #TODO: return random variable z. calculating z ~ N(mean, exp(log_sigma)) using z = mean + exp(log_sigma) * epsilon
         return None
 
     def build_cvae_mlp(self, kl_weight=1.0):
@@ -52,9 +52,10 @@ class cvae(object):
 
         # TODO: building a encoder network
         enc_dense = None #dense layer
-        drop = None #dropout layer
+        enc_drop = None #dropout layer
         z_mean = None #mean layer (dense layer)
         z_log_sigma = None #variance layer(dense layer)
+
         z = Lambda(self._sampling)([z_mean, z_log_sigma])
 
         # TODO: concatenating z and y using Concatenate Layer
