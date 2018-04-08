@@ -70,7 +70,7 @@ class cvae(object):
         cvae_model = Model([x, y], dec_out)
         encoder_model = Model([x, y], z_mean)
 
-        # TODO: building generator (Taku will implfement this later)
+        # TODO: building generator (Taku will implement this later)
         generator_model = None
 
         return cvae_model, encoder_model, generator_model
