@@ -3,6 +3,7 @@ from keras.layers import Dense, Concatenate, Dropout, Input, Lambda, Layer
 from keras import backend as K
 from keras.metrics import binary_crossentropy
 import Math
+import numpy as np
 
 
 class cvae(object):
@@ -32,7 +33,7 @@ class cvae(object):
         mean, log_sigma = args
 
         # TODO: generating random variable epsilon ~ N(0, I)
-        epsilon = 0
+        epsilon = np.random.normal(0, 1, z_dim)
 
         # TODO: return random variable z. calculating z ~ N(mean, exp(log_sigma)) using z = mean + exp(log_sigma) * epsilon
         return mean + Math.exp(log_sigma) * epsilon
