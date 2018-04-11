@@ -3,6 +3,7 @@ from keras.layers import Dense, Concatenate, Dropout, Input, Lambda, Layer
 from keras import backend as K
 from keras.metrics import binary_crossentropy
 
+
 class cvae(object):
 
     def __init__(self, n_classes, input_dim, z_dim=100, intermediate_dim=300, dropout_keep_prob=1.0):
@@ -18,8 +19,8 @@ class cvae(object):
         self.n_classes = n_classes
         self.z_dim = z_dim
         self.input_dim = input_dim
-        self.intermediate_dim=intermediate_dim
-        self.dropout_keep_prob=dropout_keep_prob
+        self.intermediate_dim = intermediate_dim
+        self.dropout_keep_prob = dropout_keep_prob
 
     def _sampling(self, args):
         """
@@ -27,13 +28,14 @@ class cvae(object):
         :param args: tuple(mean, log sigma), parameters of Gaussian distribution for latent variable
         :return: sampling value generated from Gaussian distribution
         """
+        # gaussian parameters
         mean, log_sigma = args
 
-        #TODO: generating random variable epsilon ~ N(0, I)
-        epsilon = 0
+        # generating random variable epsilon ~ N(0, I)
+        epsilon = K.random_normal(shape=(K.shape(mean)[0], self.z_dim), mean=0.,stddev=1.0)
 
-        #TODO: return random variable z. calculating z ~ N(mean, exp(log_sigma)) using z = mean + exp(log_sigma) * epsilon
-        return None
+        # return random variable z. calculating z ~ N(mean, exp(log_sigma))
+        return mean + K.exp(log_sigma) * epsilon
 
     def build_cvae_mlp(self, kl_weight=1.0):
         """
@@ -43,27 +45,28 @@ class cvae(object):
         """
         input_dim = self.input_dim
 
-        #TODO: defining x and y using Input Layer
-        x = None
-        y = None
+        # defining x and y using Input Layer
+        x = Input(shape=(input_dim,))
+        y = Input(shape=(self.n_classes,))
 
-        # TODO: concatenating x and y using Concatenate Layer
-        concat = None
+        # concatenating x and y using Concatenate Layer
+        input_layer = Concatenate([x, y], name='input_layer')
 
-        # TODO: building a encoder network
-        enc_dense = None #dense layer
-        enc_drop = None #dropout layer
-        z_mean = None #mean layer (dense layer)
-        z_log_sigma = None #variance layer(dense layer)
+        # building a encoder network
+        enc_dense = Dense(self.intermediate_dim, activation='relu', name='enc_dense')(input_layer)  # dense layer
+        # enc_drop = None #dropout layer
+        z_mean = Dense(self.z_dim, activation='relu', name='z_mean')(enc_dense)   # mean layer (dense layer)
+        z_log_sigma = Dense(self.z_dim, activation='relu', name='z_log_sigma')(enc_dense)   # variance layer (dense layer)
 
         z = Lambda(self._sampling)([z_mean, z_log_sigma])
 
-        # TODO: concatenating z and y using Concatenate Layer
-        dec_merged = None
+        # concatenating z and y using Concatenate Layer
+        dec_merged = Concatenate([z, y], name='dec_merged')
 
-        # TODO: building a decoder network
-        dec_dense = None # dense layer
-        dec_out = None # output layer(dense layer) using sigmoid. you should use use_bias=False
+        # building a decoder network
+        dec_dense = Dense(self.intermediate_dim, activation='relu', name='dec_dense')(dec_merged)  # dense layer
+        dec_out_dim = input_dim
+        dec_out = Dense(dec_out_dim, activation='sigmoid', name='dec_out')(dec_dense)  # output layer(dense layer) using sigmoid. you should use use_bias=False
 
         cvae_model = Model([x, y], dec_out)
         encoder_model = Model([x, y], z_mean)
