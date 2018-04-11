@@ -29,13 +29,13 @@ class cvae(object):
         """
         mean, log_sigma = args
 
-        #TODO: generating random variable epsilon ~ N(0, I)
+        # TODO: generating random variable epsilon ~ N(0, I)
         epsilon = 0
 
-        #TODO: return random variable z. calculating z ~ N(mean, exp(log_sigma)) using z = mean + exp(log_sigma) * epsilon
+        # TODO: return random variable z. calculating z ~ N(mean, exp(log_sigma)) using z = mean + exp(log_sigma) * epsilon
         return None
 
-    def build_cvae_mlp(self, kl_weight=1.0):
+    def _build_cvae_mlp(self, kl_weight=1.0):
         """
         build function of CVAE using MLP model.
         :param kl_weight: float, weight for KL divergence(Default is 1.0)
@@ -43,12 +43,12 @@ class cvae(object):
         """
         input_dim = self.input_dim
 
-        #TODO: defining x and y using Input Layer
+        # TODO: defining x and y using Input Layer
         x = None
         y = None
 
         # TODO: concatenating x and y using Concatenate Layer
-        concat = None
+        concat = Concatenate()([x, y])
 
         # TODO: building a encoder network
         enc_dense = None #dense layer
@@ -70,5 +70,17 @@ class cvae(object):
 
         # TODO: building generator (Taku will implement this later)
         generator_model = None
+
+        return cvae_model, encoder_model, generator_model
+
+    def _vae_loss(self, x, x_decoded_mean):
+        xent_loss = self.input_dim * binary_crossentropy(x, x_decoded_mean)
+        kl_loss = - 0.5 * K.sum(1 + self.z_log_sigma - K.square(self.z_mean) - K.exp(self.z_log_sigma), axis=-1)
+
+        return xent_loss + kl_loss
+
+    def get_cvae(self):
+        cvae_model, encoder_model, generator_model = self._build_cvae_mlp()
+        cvae_model.compile(optimizer='rmsprop', loss=self._vae_loss)
 
         return cvae_model, encoder_model, generator_model
