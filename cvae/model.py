@@ -19,6 +19,7 @@ class cvae(object):
         self.n_classes = n_classes
         self.z_dim = z_dim
         self.input_dim = input_dim
+        self.output_dim = input_dim
         self.intermediate_dim = intermediate_dim
         self.dropout_keep_prob = dropout_keep_prob
 
@@ -37,7 +38,7 @@ class cvae(object):
         # return random variable z. calculating z ~ N(mean, exp(log_sigma))
         return mean + K.exp(log_sigma) * epsilon
 
-    def build_cvae_mlp(self, kl_weight=1.0):
+    def _build_cvae_mlp(self):
         """
         build function of CVAE using MLP model.
         :param kl_weight: float, weight for KL divergence(Default is 1.0)
@@ -50,28 +51,61 @@ class cvae(object):
         y = Input(shape=(self.n_classes,))
 
         # concatenating x and y using Concatenate Layer
-        input_layer = Concatenate([x, y], name='input_layer')
+        input_layer = Concatenate(name='input_layer')([x, y])
 
         # building a encoder network
-        enc_dense = Dense(self.intermediate_dim, activation='relu', name='enc_dense')(input_layer)  # dense layer
-        # enc_drop = None #dropout layer
-        z_mean = Dense(self.z_dim, activation='relu', name='z_mean')(enc_dense)   # mean layer (dense layer)
-        z_log_sigma = Dense(self.z_dim, activation='relu', name='z_log_sigma')(enc_dense)   # variance layer (dense layer)
+        enc_dense = Dense(self.intermediate_dim, activation='relu', name='enc_dense') # dense layer
+        enc_drop = Dropout(rate=self.dropout_keep_prob, name='enc_drop') #dropout layer
+        enc_mean = Dense(self.z_dim, activation='relu', name='z_mean')   # mean layer (dense layer)
+        enc_log_sigma = Dense(self.z_dim, activation='relu', name='z_log_sigma')   # variance layer (dense layer)
 
-        z = Lambda(self._sampling)([z_mean, z_log_sigma])
+        enc_hid = enc_drop(enc_dense(input_layer))
+        self._z_mean = enc_mean(enc_hid)
+        self._z_log_sigma = enc_log_sigma(enc_hid)
+
+        sample_z = Lambda(self._sampling)([self._z_mean, self._z_log_sigma])
 
         # concatenating z and y using Concatenate Layer
-        dec_merged = Concatenate([z, y], name='dec_merged')
+        dec_merged = Concatenate(name='dec_merged')([sample_z, y])
 
         # building a decoder network
-        dec_dense = Dense(self.intermediate_dim, activation='relu', name='dec_dense')(dec_merged)  # dense layer
-        dec_out_dim = input_dim
-        dec_out = Dense(dec_out_dim, activation='sigmoid', name='dec_out')(dec_dense)  # output layer(dense layer) using sigmoid. you should use use_bias=False
+        dec_dense = Dense(self.intermediate_dim, activation='relu', name='dec_dense')  # dense layer
+        dec_out = Dense(self.output_dim, activation='sigmoid', name='dec_out')  # output layer(dense layer) using sigmoid. you should use use_bias=False
 
-        cvae_model = Model([x, y], dec_out)
-        encoder_model = Model([x, y], z_mean)
+        dec_hid = dec_dense(dec_merged)
+        out = dec_out(dec_hid)
 
-        # TODO: building generator (Taku will implement this later)
-        generator_model = None
+        cvae_model = Model([x, y], out)
+        encoder_model = Model([x, y], self._z_mean)
+
+        z = Input(shape=(self.z_dim,))
+        gen_merged = Concatenate(name='gen_merged')([z, y])
+        gen_hid = dec_dense(gen_merged)
+        gen_out = dec_out(gen_hid)
+
+        generator_model = Model([z, y], gen_out)
+
+        return cvae_model, encoder_model, generator_model
+
+    def _vae_loss(self, x, x_decoded_mean):
+        '''
+        loss function for VAE
+
+        :param x: keras tensor object. target vector to be reconstructed.
+        :param x_decoded_mean: keras tensor object. output of decoder.
+        :return: loss
+        '''
+        ent_loss = self.input_dim * binary_crossentropy(x, x_decoded_mean)
+        kl_loss = - 0.5 * K.sum(1 + self._z_log_sigma - K.square(self._z_mean) - K.exp(self._z_log_sigma), axis=-1)
+
+        return ent_loss + kl_loss
+
+    def get_simple_cvae(self):
+        '''
+        build a simple conditional VAE
+        :return: tuple of models, (CVAE model, encoder model, decoder model)
+        '''
+        cvae_model, encoder_model, generator_model = self._build_cvae_mlp()
+        cvae_model.compile(optimizer='rmsprop', loss=self._vae_loss)
 
         return cvae_model, encoder_model, generator_model

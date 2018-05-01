@@ -1,2 +1,6 @@
 /.idea/
 .python-version
+.DS_Store
+/cvae/.DS_Store
+/cvae/__pycache__/
+/cvae/results/
