@@ -192,12 +192,12 @@ def thresh_kmeans(img_input, itr=5, mu1_init=50, mu2_init=150):
     return img_bin
 
 
-def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01):
+def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.1):
     """
     make binary or gray image by processing image that user inputs
 
     :param img_input: ndarray, "uint8" image (rgb or gray)
-    :param size: int, resized number
+    :param size: int, resized number, if 0 is set, input image size is output
     :param OPT: str, "GRAY" or "BIN", output image type
     :param opening_ratio: 0 - 1.0, opening size
     :return img_bin: ndarray, binarized image
@@ -240,42 +240,50 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01):
         kernel = np.ones((opening_size, opening_size), np.uint8)
         img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, kernel)
 
-    # invertion of black and white
-    img_bin, _ = bwinverter(img_bin, 0.1, ret)
+    # invert black and white pixel so that number area is white pixel
+    # And this image is used as mask image
+    img_mask, _ = bwinverter(img_bin, bw_inv_size, ret)
 
     # return gray image or binary image
     if (OPT == "GRAY"):
         # resize
         if (size >= 1):
             img_gray = resize_keeping_aspect_ratio(img_gray, size, 'LONG')
-        # invert black and white if flag is True
-        _, flag = bwinverter(img_gray, 0.1, ret)
+            img_mask = resize_keeping_aspect_ratio(img_mask, size, 'LONG')
+        # invert black and white of gray image if flag is True
+        _, flag = bwinverter(img_gray, bw_inv_size, ret)
         if (flag is True):
-            img_gray = cv2.bitwise_not(img_gray)
+            img_out_gray = cv2.bitwise_not(img_gray)
+        else:
+            img_out_gray = img_gray
+        # change into black excluding number area
+        img_out_gray_mask = cv2.bitwise_and(img_out_gray, img_out_gray, mask=img_mask)
 
         # adjust aspect ratio of image to 1:1
-        img_gray_square = make_square_img(img_gray)
-        return img_gray_square
+        img_out_square = make_square_img(img_out_gray_mask)
+        return img_out_square
     elif (OPT == "BIN"):
         # resize
         if (size >= 1):
-            img_bin = resize_keeping_aspect_ratio(img_bin, size, 'LONG')
+            img_out_bin = resize_keeping_aspect_ratio(img_mask, size, 'LONG')
+        else:
+            img_out_bin = img_mask
         # adjust aspect ratio of image to 1:1
-        img_bin_square = make_square_img(img_bin)
-        return img_bin_square
+        img_out_square = make_square_img(img_out_bin)
+        return img_out_square
 
 
 if __name__ == '__main__':
     # load image (Attension: use 8bit image)
-    filename = "/Users/khashimoto/Desktop/workspace/6_.png"
+    filename = "<image path>"
     img_src = cv2.imread(filename, cv2.IMREAD_COLOR)
 
     # convert to bin image
     # img_bin = binarize_kmeans(img_src, 28, 5, 50, 150)
-    img_square = make_procimg(img_src, 28, "GRAY", 0.01)
+    img_square = make_procimg(img_src, 0, "BIN", 0.01, 0.1)
     print(img_square.shape)
 
-    # # show image
+    # show image
     cv2.imshow("", img_square)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
