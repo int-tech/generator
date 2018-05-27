@@ -4,6 +4,8 @@ from keras.models import model_from_json
 from keras.preprocessing.image import array_to_img, img_to_array, load_img
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
+import sys
+import os
 
 
 def load_model(dir_name='results/model', model_name='simpleCVAE'):
@@ -40,7 +42,7 @@ def get_picture(filepath, target_shape):
 
     return img_array
 
-def generate_number(filepath, n_classes=10, shape = (28,28)):
+def generate_number(filepath, label, n_classes=10, shape = (28,28)):
     '''
     generating number from 0 to 9 using generator trained CVAE.
 
@@ -54,8 +56,38 @@ def generate_number(filepath, n_classes=10, shape = (28,28)):
     x = np.where(x > 0.6, 0, 1.0-x)
 
     enc_list = []
+    y = to_categorical(label, n_classes)
+    z_encoded = encoder.predict([np.array([x]), np.array([y])])
+    enc_list.append(z_encoded)
+
+    z = np.average(enc_list, axis=0)
+
+    gen_list = []
     for i in range(n_classes):
         y = to_categorical(i, n_classes)
+        x_decoded = generator.predict([z, np.array([y])])
+        x_decoded = x_decoded.reshape(28, 28, 1)
+        gen_img = array_to_img(x_decoded, scale=True)
+        gen_list.append(gen_img)
+
+    return gen_list
+
+def generate_number_from_digitsets(filepaths, labels, n_classes=10, shape = (28,28)):
+    '''
+    generating number from 0 to 9 using generator trained CVAE.
+
+    :param filepath: list of str, list of input file path
+    :param n_classes: list of int, list of the number of classes
+    :return: list of img, generated images
+    '''
+
+    encoder, generator = load_model()
+
+    enc_list = []
+    for file, label in zip(filepaths, labels):
+        x = get_picture(file, shape)
+        x = np.where(x > 0.6, 0, 1.0 - x)
+        y = to_categorical(label, n_classes)
         z_encoded = encoder.predict([np.array([x]), np.array([y])])
         enc_list.append(z_encoded)
 
@@ -73,11 +105,16 @@ def generate_number(filepath, n_classes=10, shape = (28,28)):
 
 
 if __name__ == '__main__':
-    dir_path = 'test_data'
-    label = 2
+    argvs = sys.argv
+    file_path = 'test_data/0.png'
+    label = 0
 
-    gen_list = generate_number(filepath='{}/{}.png'.format(dir_path, label))
+    file_path = argvs[1]
+    label = int(argvs[2])
+    root, ext = os.path.splitext(file_path)
+
+    gen_list = generate_number(filepath=file_path, label=label)
 
     for i, gen_img in enumerate(gen_list):
-        plt.imsave('gen_{}.png'.format(i), gen_img)
-        plt.show()
+        plt.imsave('{}_gen_{}.png'.format(root, i), gen_img)
+        plt.close()
