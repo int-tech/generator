@@ -32,7 +32,7 @@ def data_preprocessing(data='mnist'):
         raise NotImplementedError
 
 
-def train(z_dim, data, dir_name='results/model', model_name='simpleCVAE'):
+def train(z_dim, data, epochs = 20, batch_size = 100, dir_name='results/model', model_name='simpleCVAE'):
     '''
     training CVAE on MNIST
     :param z_dim: int, dimension of latent space
@@ -45,9 +45,6 @@ def train(z_dim, data, dir_name='results/model', model_name='simpleCVAE'):
 
     x_train, y_train, x_test, y_test, input_dim, n_classes = data
 
-    epochs = 20
-    batch_size = 100
-
     conditional_vae = model.cvae(n_classes, input_dim, z_dim=z_dim)
 
     cvae_model, encoder, decoder = conditional_vae.get_simple_cvae()
@@ -58,7 +55,17 @@ def train(z_dim, data, dir_name='results/model', model_name='simpleCVAE'):
                    batch_size=batch_size,
                    validation_data=([x_test, y_test], x_test))
 
-    cvae_model.save_weights('{}/{}_.h5'.format(dir_name, model_name))
+    cvae_model.save_weights('{}/{}_cvae.h5'.format(dir_name, model_name))
+    json_string = cvae_model.to_json()
+    open(os.path.join(dir_name, '{}_cvae.json'.format(model_name)), 'w').write(json_string)
+
+    encoder.save_weights('{}/{}_enc.h5'.format(dir_name, model_name))
+    json_string = encoder.to_json()
+    open(os.path.join(dir_name, '{}_enc.json'.format(model_name)), 'w').write(json_string)
+
+    decoder.save_weights('{}/{}_dec.h5'.format(dir_name, model_name))
+    json_string = decoder.to_json()
+    open(os.path.join(dir_name, '{}_dec.json'.format(model_name)), 'w').write(json_string)
 
     return cvae_model, encoder, decoder
 
@@ -155,12 +162,13 @@ def gen_number(x_test, y_test, encoder, generator, dir_name='results/gen'):
     plt.savefig('{}/plot_gen'.format(dir_name))
     plt.close()
 
-if __name__ == '__main__':
-    z_dim = 2
-    data = x_train, y_train, x_test, y_test, input_dim, n_classes = data_preprocessing()
-    print(x_test[0].shape)
-    cvae_model, encoder, generator = train(z_dim, data)
 
-    plot_manifold(generator)
+if __name__ == '__main__':
+    z_dim = 10
+    data = x_train, y_train, x_test, y_test, input_dim, n_classes = data_preprocessing()
+    cvae_model, encoder, generator = train(z_dim, data, epochs=30)
+
+    if z_dim == 2:
+        plot_manifold(generator)
 
     gen_number(x_test, y_test, encoder, generator)

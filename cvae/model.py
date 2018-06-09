@@ -79,13 +79,13 @@ class cvae(object):
         encoder_model = Model([x, y], self._z_mean)
 
         z = Input(shape=(self.z_dim,))
-        gen_merged = Concatenate(name='gen_merged')([z, y])
-        gen_hid = dec_dense(gen_merged)
-        gen_out = dec_out(gen_hid)
+        dec_merged = Concatenate(name='gen_merged')([z, y])
+        dec_hid = dec_dense(dec_merged)
+        decoder_out = dec_out(dec_hid)
 
-        generator_model = Model([z, y], gen_out)
+        decoder_model = Model([z, y], decoder_out)
 
-        return cvae_model, encoder_model, generator_model
+        return cvae_model, encoder_model, decoder_model
 
     def _vae_loss(self, x, x_decoded_mean):
         '''
@@ -105,7 +105,7 @@ class cvae(object):
         build a simple conditional VAE
         :return: tuple of models, (CVAE model, encoder model, decoder model)
         '''
-        cvae_model, encoder_model, generator_model = self._build_cvae_mlp()
+        cvae_model, encoder_model, decoder_model = self._build_cvae_mlp()
         cvae_model.compile(optimizer='rmsprop', loss=self._vae_loss)
 
-        return cvae_model, encoder_model, generator_model
+        return cvae_model, encoder_model, decoder_model
