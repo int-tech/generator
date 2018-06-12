@@ -275,7 +275,7 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=
 
 if __name__ == '__main__':
     # load image (Attension: use 8bit image)
-    filename = "<image path>"
+    filename = "<imagepath>"
     img_src = cv2.imread(filename, cv2.IMREAD_COLOR)
 
     # convert to bin image
