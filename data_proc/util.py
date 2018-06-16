@@ -5,6 +5,7 @@ utility functions for make_procimg.py
 def limit_var_range(input_num, min, max):
     """
     limit input_num range (input_num ->  (min <= output_num <= max))
+
         :param input_num : input number
         :param min       : min number of range
         :param max       : max number of range
@@ -24,6 +25,7 @@ def limit_var_range(input_num, min, max):
 def replace_num(input_num, condition_num, replaced_num):
     """
     if input_num is condition_num, return replaced_num
+    
         :param  : input_num
         :param  : condition_num
         :return : input_num or replaced num

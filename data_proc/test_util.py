@@ -58,5 +58,39 @@ class TestLimitVarRange(unittest.TestCase):
         self.assertEqual(expected_num, result)
 
 
+class TestReplaceNum(unittest.TestCase):
+    """
+    check if replace_num() works correctly
+    """
+
+    def test_replace_num_replace_case(self):
+        """
+        check the case input number is replaced
+        """
+        # settings
+        input_num = 0
+        condition_num = 0
+        expected_num = 1
+        replaced_num = 1
+        result = util.replace_num(input_num, condition_num, replaced_num)
+
+        # assert
+        self.assertEqual(expected_num, result)
+
+    def test_replace_num_not_replace_case(self):
+        """
+        check the case input number is NOT replaced
+        """
+        # settings
+        input_num = 100
+        condition_num = 0
+        expected_num = 100
+        replaced_num = 1
+        result = util.replace_num(input_num, condition_num, replaced_num)
+
+        # assert
+        self.assertEqual(expected_num, result)
+
+
 if __name__ == '__main__':
     unittest.main()

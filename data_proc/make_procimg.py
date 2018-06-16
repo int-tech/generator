@@ -4,15 +4,13 @@ from PIL import Image
 import util
 
 
-def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
+def decide_four_corners_size(img_input, corner_size_ratio=1.0):
     """
-    invert black and white area so that number area is white area
-    if 4 corner's size areas have white area more than black one, invert black and white
+    decide four corners size for black_white_inverter()
 
-    :param  img_input         : ndarray, 1ch image (binary image))
-    :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
-    :return img_dst           : ndarray, 1ch image
-    :return flag              : boolean, True: inverted, False: not inverted
+        :param  img_input         : ndarray, 1ch image (binary image))
+        :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
+        :return h_corner_size, w_corner_size
     """
 
     # limit corner_size_ratio between 0 and 1
@@ -26,12 +24,32 @@ def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
     h_corner_size = int(h * corner_size_ratio)
     w_corner_size = int(w * corner_size_ratio)
 
-    # if corner area size is zero
-    # FIXME: use funciton
-    if (h_corner_size == 0):
-        h_corner_size = 1
-    if (w_corner_size == 0):
-        w_corner_size = 1
+    # if corner area size is zero, replace the size to one
+    h_corner_size = util.replace_num(h_corner_size, 0, 1)
+    w_corner_size = util.replace_num(w_corner_size, 0, 1)
+
+    return h_corner_size, w_corner_size
+
+
+def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
+    """
+    invert black and white area so that number area is white area
+    if 4 corner's areas have white area more than black one, invert black and white
+
+        :param  img_input         : ndarray, 1ch image (binary image))
+        :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
+        :return img_dst           : ndarray, 1ch image
+        :return flag              : boolean, True: inverted, False: not inverted
+    """
+
+    # ------------------------------------------------------------------------
+    # get 4 corner images
+    # ------------------------------------------------------------------------
+
+    # get input image and 4 corner images size
+    h = img_input.shape[0]
+    w = img_input.shape[1]
+    h_corner_size, w_corner_size = decide_four_corners_size(img_input, corner_size_ratio)
 
     # get 4 corner images
     area = np.empty([4, h_corner_size, w_corner_size])
@@ -40,27 +58,32 @@ def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
     area[2] = img_input[h-h_corner_size:h, 0:w_corner_size]     # lower left
     area[3] = img_input[h-h_corner_size:h, w-w_corner_size:w]   # lower right
 
+
+    # ------------------------------------------------------------------------
+    # main processing of this function
+    # ------------------------------------------------------------------------
+
     # if white area is more than black one, invert black and white
     # FIXME: "flag" is not good name (isInverted)
     mean_four_corner_pixel_value = np.mean(area)
     if (mean_four_corner_pixel_value < th_pixel_value):
         img_dst = img_input
-        flag = False
+        flag_inversion_activation = False
     else:
         img_dst = cv2.bitwise_not(img_input)
-        flag = True
+        flag_inversion_activation = True
 
-    return img_dst, flag
+    return img_dst, flag_inversion_activation
 
 
 def resize_keeping_aspect_ratio(img_input, size, OPT='LONG'):
     """
     resize image keeping aspect ratio
 
-    :param img_input: ndarray, 1ch or 3ch image
-    :param size: int, size that we want to resize
-    :param OPT: str, 'LONG' or 'SHORT', fit to longer or shorter of image
-    :return img_dst: ndarray, resized image
+        :param img_input: ndarray, 1ch or 3ch image
+        :param size: int, size that we want to resize
+        :param OPT: str, 'LONG' or 'SHORT', fit to longer or shorter of image
+        :return img_dst: ndarray, resized image
     """
 
     # get size of input image
@@ -108,8 +131,8 @@ def make_square_img(img_input):
     """
     make square image (1:1) from input image
 
-    :param img_input: ndarray, front image, 1ch or 3ch image
-    :return img_square: ndarray, square image
+        :param img_input: ndarray, front image, 1ch or 3ch image
+        :return img_square: ndarray, square image
     """
 
     # get image size
@@ -142,11 +165,11 @@ def thresh_kmeans(img_input, itr=5, mu1_init=50, mu2_init=150):
     """
     binarize input image using k-means algorithm
 
-    :param img_input: ndarray uint8, 1ch image
-    :param itr: int, iterator of k-means algorithm
-    :param mu1_init: int, initial centroid of cluster1
-    :param mu2_init: int, initial centroid of cluster2
-    :return img_bin: ndarray uint8, binarized image
+        :param img_input: ndarray uint8, 1ch image
+        :param itr: int, iterator of k-means algorithm
+        :param mu1_init: int, initial centroid of cluster1
+        :param mu2_init: int, initial centroid of cluster2
+        :return img_bin: ndarray uint8, binarized image
     """
 
     # histogram
@@ -200,11 +223,11 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=
     """
     make binary or gray image by processing image that user inputs
 
-    :param img_input: ndarray, "uint8" image (rgb or gray)
-    :param output_size: int, resized number, if 0 is set, input image size is output
-    :param OPT: str, "GRAY" or "BIN", output image type
-    :param opening_ratio: 0 - 1.0, opening size
-    :return img_bin: ndarray, binarized image
+        :param img_input: ndarray, "uint8" image (rgb or gray)
+        :param output_size: int, resized number, if 0 is set, input image size is output
+        :param OPT: str, "GRAY" or "BIN", output image type
+        :param opening_ratio: 0 - 1.0, opening size
+        :return img_bin: ndarray, binarized image
     """
 
     # FIXME: revize assert part
