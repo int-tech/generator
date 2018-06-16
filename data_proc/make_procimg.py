@@ -1,48 +1,49 @@
 import cv2
 import numpy as np
 from PIL import Image
+import util
 
 
-def bwinverter(img_input, ratio=1.0, th=128):
+def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
     """
-    invert black and white area so that number area is white
-    if 4 corner'size areas have white area more than black one, invert
+    invert black and white area so that number area is white area
+    if 4 corner's size areas have white area more than black one, invert black and white
 
-    :param img_input: ndarray, 1ch image (binary image))
-    :param ratio: 0 - 1.0, coner size which is used to judge if inverted of not
-    :return img_dst: ndarray, 1ch image
-    :return flag: boolean, True: inverted, False: not inverted
+    :param  img_input         : ndarray, 1ch image (binary image))
+    :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
+    :return img_dst           : ndarray, 1ch image
+    :return flag              : boolean, True: inverted, False: not inverted
     """
+
+    # limit corner_size_ratio between 0 and 1
+    corner_size_ratio = util.limit_var_range(corner_size_ratio, 0.0, 1.0)
 
     # get size of input image
     h = img_input.shape[0]
     w = img_input.shape[1]
 
-    # if ratio is not between 0 and 1
-    if (ratio > 1.0):
-        ratio = 1.0
-    elif (ratio < 0):
-        ratio = 0.0
-
     # corner size
-    h_size = int(h * ratio)
-    w_size = int(w * ratio)
+    h_corner_size = int(h * corner_size_ratio)
+    w_corner_size = int(w * corner_size_ratio)
 
     # if corner area size is zero
-    if (h_size == 0):
-        h_size = 1
-    if (w_size == 0):
-        w_size = 1
+    # FIXME: use funciton
+    if (h_corner_size == 0):
+        h_corner_size = 1
+    if (w_corner_size == 0):
+        w_corner_size = 1
 
     # get 4 corner images
-    area = np.empty([4, h_size, w_size])
-    area[0] = img_input[0:h_size, 0:w_size]    # upper left
-    area[1] = img_input[0:h_size, w-w_size:w]  # upper right
-    area[2] = img_input[h-h_size:h, 0:w_size]  # lower left
-    area[3] = img_input[h-h_size:h, w-w_size:w]  # lower right
+    area = np.empty([4, h_corner_size, w_corner_size])
+    area[0] = img_input[0:h_corner_size, 0:w_corner_size]       # upper left
+    area[1] = img_input[0:h_corner_size, w-w_corner_size:w]     # upper right
+    area[2] = img_input[h-h_corner_size:h, 0:w_corner_size]     # lower left
+    area[3] = img_input[h-h_corner_size:h, w-w_corner_size:w]   # lower right
 
-    # if white area is more than black one, invert
-    if (np.mean(area) < th):
+    # if white area is more than black one, invert black and white
+    # FIXME: "flag" is not good name (isInverted)
+    mean_four_corner_pixel_value = np.mean(area)
+    if (mean_four_corner_pixel_value < th_pixel_value):
         img_dst = img_input
         flag = False
     else:
@@ -66,11 +67,14 @@ def resize_keeping_aspect_ratio(img_input, size, OPT='LONG'):
     height_input = img_input.shape[0]
     width_input = img_input.shape[1]
 
+    # FIXME: below part should belong to test part
     # -*- exception part -*-
     # OPT must be 'LONG' or 'SHORT'
     assert (OPT == 'LONG' or OPT == 'SHORT'), (
         "OPT must be 'LONG' or 'SHORT'.")
 
+    # FIXME: below part should be change to exception part
+    #        in this case, finish this program
     # if size is not integer
     size = int(size)
     # if setting size is equal to or less than zero
@@ -197,12 +201,13 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=
     make binary or gray image by processing image that user inputs
 
     :param img_input: ndarray, "uint8" image (rgb or gray)
-    :param size: int, resized number, if 0 is set, input image size is output
+    :param output_size: int, resized number, if 0 is set, input image size is output
     :param OPT: str, "GRAY" or "BIN", output image type
     :param opening_ratio: 0 - 1.0, opening size
     :return img_bin: ndarray, binarized image
     """
 
+    # FIXME: revize assert part
     # -*- exception part -*-
     # OPT must be 'LONG' or 'SHORT'
     assert (OPT == 'GRAY' or OPT == 'BIN'), (
@@ -242,7 +247,7 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=
 
     # invert black and white pixel so that number area is white pixel
     # And this image is used as mask image
-    img_mask, _ = bwinverter(img_bin, bw_inv_size, ret)
+    img_mask, _ = black_white_inverter(img_bin, bw_inv_size, ret)
 
     # return gray image or binary image
     if (OPT == "GRAY"):
@@ -251,7 +256,7 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=
             img_gray = resize_keeping_aspect_ratio(img_gray, size, 'LONG')
             img_mask = resize_keeping_aspect_ratio(img_mask, size, 'LONG')
         # invert black and white of gray image if flag is True
-        _, flag = bwinverter(img_gray, bw_inv_size, ret)
+        _, flag = black_white_inverter(img_gray, bw_inv_size, ret)
         if (flag is True):
             img_out_gray = cv2.bitwise_not(img_gray)
         else:
@@ -275,7 +280,7 @@ def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=
 
 if __name__ == '__main__':
     # load image (Attension: use 8bit image)
-    filename = "<imagepath>"
+    filename = "../../test_data/numimages/6_r.png"
     img_src = cv2.imread(filename, cv2.IMREAD_COLOR)
 
     # convert to bin image
