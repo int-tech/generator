@@ -43,10 +43,10 @@ def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
     invert black and white area so that number area is white area
     if 4 corner's areas have white area more than black one, invert black and white
 
-        :param  img_input         : ndarray, 1ch image (binary image))
-        :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
-        :return img_dst           : ndarray, 1ch image
-        :return flag              : boolean, True: inverted, False: not inverted
+        :param  img_input                 : ndarray, 1ch image (binary image))
+        :param  corner_size_ratio         : 0 - 1.0, corner size ratio which is used to judge if image is inverted
+        :return img_dst                   : ndarray, 1ch image
+        :return flag_inversion_activation : boolean, True: inverted, False: not inverted
     """
 
     # get 4 corner images
@@ -55,9 +55,11 @@ def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
     # if white area is more than black one, invert black and white
     mean_four_corner_pixel_value = np.mean(img_corners)
     if (mean_four_corner_pixel_value < th_pixel_value):
+        # not inversion
         img_dst = img_input
         flag_inversion_activation = False
     else:
+        # inversion
         img_dst = cv2.bitwise_not(img_input)
         flag_inversion_activation = True
 
