@@ -1,16 +1,16 @@
 import cv2
 import numpy as np
-from PIL import Image
 import util
+from PIL import Image
 
 
-def decide_four_corners_size(img_input, corner_size_ratio=1.0):
+def crop_four_corners_image(img_input, corner_size_ratio=1.0):
     """
-    decide four corners size for black_white_inverter()
+    crop four corners image for black_white_inverter()
 
         :param  img_input         : ndarray, 1ch image (binary image))
         :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
-        :return h_corner_size, w_corner_size
+        :return img_corners       : four corner images
     """
 
     # limit corner_size_ratio between 0 and 1
@@ -28,7 +28,14 @@ def decide_four_corners_size(img_input, corner_size_ratio=1.0):
     h_corner_size = util.replace_num(h_corner_size, 0, 1)
     w_corner_size = util.replace_num(w_corner_size, 0, 1)
 
-    return h_corner_size, w_corner_size
+    # get 4 corner images
+    img_corners = np.empty([4, h_corner_size, w_corner_size])         # initialize
+    img_corners[0] = img_input[0:h_corner_size, 0:w_corner_size]      # upper left
+    img_corners[1] = img_input[0:h_corner_size, w-w_corner_size:w]    # upper right
+    img_corners[2] = img_input[h-h_corner_size:h, 0:w_corner_size]    # lower left
+    img_corners[3] = img_input[h-h_corner_size:h, w-w_corner_size:w]  # lower right
+
+    return img_corners
 
 
 def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
@@ -42,30 +49,11 @@ def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
         :return flag              : boolean, True: inverted, False: not inverted
     """
 
-    # ------------------------------------------------------------------------
     # get 4 corner images
-    # ------------------------------------------------------------------------
-
-    # get input image and 4 corner images size
-    h = img_input.shape[0]
-    w = img_input.shape[1]
-    h_corner_size, w_corner_size = decide_four_corners_size(img_input, corner_size_ratio)
-
-    # get 4 corner images
-    area = np.empty([4, h_corner_size, w_corner_size])
-    area[0] = img_input[0:h_corner_size, 0:w_corner_size]       # upper left
-    area[1] = img_input[0:h_corner_size, w-w_corner_size:w]     # upper right
-    area[2] = img_input[h-h_corner_size:h, 0:w_corner_size]     # lower left
-    area[3] = img_input[h-h_corner_size:h, w-w_corner_size:w]   # lower right
-
-
-    # ------------------------------------------------------------------------
-    # main processing of this function
-    # ------------------------------------------------------------------------
+    img_corners = crop_four_corners_image(img_input, corner_size_ratio)
 
     # if white area is more than black one, invert black and white
-    # FIXME: "flag" is not good name (isInverted)
-    mean_four_corner_pixel_value = np.mean(area)
+    mean_four_corner_pixel_value = np.mean(img_corners)
     if (mean_four_corner_pixel_value < th_pixel_value):
         img_dst = img_input
         flag_inversion_activation = False
