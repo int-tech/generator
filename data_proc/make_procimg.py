@@ -40,7 +40,7 @@ def crop_four_corners_image(img_input, corner_size_ratio=1.0):
     return img_corners
 
 
-def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
+def black_white_inverter(img_input, corner_size_ratio=0.2, th_pixel_value=128):
     """
     invert black and white area so that number area is white area
     if 4 corner's areas have white area more than black one, invert black and white
@@ -76,21 +76,18 @@ def resize_keeping_aspect_ratio(img_input, size, OPT='LONG'):
     """
     resize image keeping aspect ratio
 
-        :param img_input: ndarray, 1ch or 3ch image
-        :param size: int, size that we want to resize
-        :param OPT: str, 'LONG' or 'SHORT', fit to longer or shorter of image
-        :return img_dst: ndarray, resized image
+        :param  img_input : ndarray, 1ch or 3ch image
+        :param  size      : int    , size that we want to resize
+        :param  OPT       : str    , 'LONG' or 'SHORT', fit to longer or shorter length of image
+        :return img_dst   : ndarray, resized image
     """
+
+    # exception handling : OPT
+    validation.validate_option_resize_keeping_aspect_ratio(OPT)
 
     # get size of input image
     height_input = img_input.shape[0]
     width_input = img_input.shape[1]
-
-    # FIXME: below part should belong to test part
-    # -*- exception part -*-
-    # OPT must be 'LONG' or 'SHORT'
-    assert (OPT == 'LONG' or OPT == 'SHORT'), (
-        "OPT must be 'LONG' or 'SHORT'.")
 
     # FIXME: below part should be change to exception part
     #        in this case, finish this program
@@ -215,7 +212,7 @@ def thresh_kmeans(img_input, itr=5, mu1_init=50, mu2_init=150):
     return img_bin
 
 
-def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.1):
+def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
     """
     make binary or gray image by processing image that user inputs
 
@@ -304,7 +301,7 @@ if __name__ == '__main__':
 
     # convert to bin image
     # img_bin = binarize_kmeans(img_src, 28, 5, 50, 150)
-    img_square = make_procimg(img_src, 0, "BIN", 0.01, 0.1)
+    img_square = make_procimg(img_src, 0, "BIN", 0.01, 0.2)
     print(img_square.shape)
 
     # show image

@@ -4,3 +4,5 @@
 /cvae/.DS_Store
 /cvae/__pycache__/
 /cvae/results/
+.vscode
+/data_proc/__pycache__
