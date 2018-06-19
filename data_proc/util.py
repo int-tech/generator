@@ -20,12 +20,12 @@ def limit_var_range(input_num, min, max):
         output_num = input_num
     
     return output_num
-
+    
 
 def replace_num(input_num, condition_num, replaced_num):
     """
     if input_num is condition_num, return replaced_num
-    
+
         :param  : input_num
         :param  : condition_num
         :return : input_num or replaced num

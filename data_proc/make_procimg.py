@@ -1,12 +1,14 @@
 import cv2
 import numpy as np
 import util
+import validation
 from PIL import Image
 
 
 def crop_four_corners_image(img_input, corner_size_ratio=1.0):
     """
     crop four corners image for black_white_inverter()
+    use four corners image to judge if input image should be inverted or not
 
         :param  img_input         : ndarray, 1ch image (binary image))
         :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
@@ -20,7 +22,7 @@ def crop_four_corners_image(img_input, corner_size_ratio=1.0):
     h = img_input.shape[0]
     w = img_input.shape[1]
 
-    # corner size
+    # calcurate corner size
     h_corner_size = int(h * corner_size_ratio)
     w_corner_size = int(w * corner_size_ratio)
 
@@ -42,12 +44,16 @@ def black_white_inverter(img_input, corner_size_ratio=1.0, th_pixel_value=128):
     """
     invert black and white area so that number area is white area
     if 4 corner's areas have white area more than black one, invert black and white
+    we want input image that number area is white to learn with Neural Network
 
         :param  img_input                 : ndarray, 1ch image (binary image))
         :param  corner_size_ratio         : 0 - 1.0, corner size ratio which is used to judge if image is inverted
         :return img_dst                   : ndarray, 1ch image
         :return flag_inversion_activation : boolean, True: inverted, False: not inverted
     """
+
+    # exception handling : corner_size_ratio
+    validation.validate_corner_size_ratio_range(corner_size_ratio)
 
     # get 4 corner images
     img_corners = crop_four_corners_image(img_input, corner_size_ratio)
