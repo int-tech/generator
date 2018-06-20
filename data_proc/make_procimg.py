@@ -93,15 +93,6 @@ def resize_keeping_aspect_ratio(img_input, resized_size, OPT='LONG'):
     ratio_min = min(width_input, height_input) / max(width_input, height_input)
     validation.validate_resized_size(resized_size, ratio_min, OPT)
 
-    # exception handling : 
-    # if setting size is equal to or less than zero
-    ratio_min = min(width_input, height_input) / max(width_input, height_input)
-    if (resized_size <= 0 or int(resized_size*ratio_min) <= 0):
-        print("Output image size is equal to or less than zero.")
-        print("Please set more larger size")
-        img_dst = img_input
-        return img_dst
-
     # resize image
     if (height_input > width_input):
         if (OPT == 'LONG'):
