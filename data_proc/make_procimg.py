@@ -1,7 +1,7 @@
-import cv2
 import numpy as np
 import util
 import validation
+import cv2
 from PIL import Image
 
 
@@ -72,50 +72,50 @@ def black_white_inverter(img_input, corner_size_ratio=0.2, th_pixel_value=128):
     return img_dst, flag_inversion_activation
 
 
-def resize_keeping_aspect_ratio(img_input, size, OPT='LONG'):
+def resize_keeping_aspect_ratio(img_input, resized_size, OPT='LONG'):
     """
     resize image keeping aspect ratio
 
-        :param  img_input : ndarray, 1ch or 3ch image
-        :param  size      : int    , size that we want to resize
-        :param  OPT       : str    , 'LONG' or 'SHORT', fit to longer or shorter length of image
-        :return img_dst   : ndarray, resized image
+        :param  img_input    : ndarray, 1ch or 3ch image
+        :param  resized_size : int    , size that we want to resize
+        :param  OPT          : str    , 'LONG' or 'SHORT', fit to longer or shorter length of image
+        :return img_dst      : ndarray, resized image
     """
 
     # exception handling : OPT
     validation.validate_option_resize_keeping_aspect_ratio(OPT)
 
+    # exception handling : resized_size
+    validation.validate_resized_size(resized_size)
+
     # get size of input image
     height_input = img_input.shape[0]
     width_input = img_input.shape[1]
 
-    # FIXME: below part should be change to exception part
-    #        in this case, finish this program
-    # if size is not integer
-    size = int(size)
+    # exception handling : 
     # if setting size is equal to or less than zero
     ratio_min = min(width_input, height_input) / max(width_input, height_input)
-    if (size <= 0 or int(size*ratio_min) <= 0):
+    if (resized_size <= 0 or int(resized_size*ratio_min) <= 0):
         print("Output image size is equal to or less than zero.")
         print("Please set more larger size")
         img_dst = img_input
         return img_dst
 
-    # resize
+    # resize image
     if (height_input > width_input):
         if (OPT == 'LONG'):
             ratio = width_input / height_input
-            img_dst = cv2.resize(img_input, (int(size*ratio), size))
+            img_dst = cv2.resize(img_input, (int(resized_size*ratio), resized_size))
         if (OPT == 'SHORT'):
             ratio = height_input / width_input
-            img_dst = cv2.resize(img_input, (size, int(size*ratio)))
+            img_dst = cv2.resize(img_input, (resized_size, int(resized_size*ratio)))
     else:
         if (OPT == 'LONG'):
             ratio = height_input / width_input
-            img_dst = cv2.resize(img_input, (size, int(size*ratio)))
+            img_dst = cv2.resize(img_input, (resized_size, int(resized_size*ratio)))
         if (OPT == 'SHORT'):
             ratio = width_input / height_input
-            img_dst = cv2.resize(img_input, (int(size*ratio), size))
+            img_dst = cv2.resize(img_input, (int(resized_size*ratio), resized_size))
 
     return img_dst
 

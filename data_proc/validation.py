@@ -28,3 +28,23 @@ def validate_option_resize_keeping_aspect_ratio(OPT):
     assert (OPT == 'LONG' or OPT == 'SHORT'), (
         "OPT must be 'LONG' or 'SHORT'."
     )
+
+
+def validate_resized_size(resized_size):
+    """
+    validate if resized size is integer or not and positive number or not 
+
+        :param resized_size: 
+    """
+
+    # validate positive number
+    assert (resized_size >= 0), (
+        "Please set a positive number."
+    )
+
+    # validate integer
+    flag_integer = isinstance(resized_size, int)
+    assert (flag_integer == True), (
+        "Please set integers instead of decimals."
+    )    
+    
