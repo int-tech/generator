@@ -30,11 +30,14 @@ def validate_option_resize_keeping_aspect_ratio(OPT):
     )
 
 
-def validate_resized_size(resized_size):
+def validate_resized_size(resized_size, ratio_min, OPT):
     """
-    validate if resized size is integer or not and positive number or not 
+    validate if resized size is integer or not and positive number or not
+    and also validate if shorter length of resized image is equal to or less than 0 or not
 
-        :param resized_size: 
+        :param resized_size : 
+        :param ratio_min    :
+        :param OPT          :
     """
 
     # validate positive number
@@ -48,3 +51,10 @@ def validate_resized_size(resized_size):
         "Please set integers instead of decimals."
     )    
     
+    if (OPT == "LONG"):
+        # validate shorter length of resized image
+        shorter_length = int(resized_size * ratio_min)
+        assert (shorter_length > 0 ), (
+            "Output image size is zero. "
+            "Please set more larger resized_size."
+        )

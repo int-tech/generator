@@ -85,12 +85,13 @@ def resize_keeping_aspect_ratio(img_input, resized_size, OPT='LONG'):
     # exception handling : OPT
     validation.validate_option_resize_keeping_aspect_ratio(OPT)
 
-    # exception handling : resized_size
-    validation.validate_resized_size(resized_size)
-
     # get size of input image
     height_input = img_input.shape[0]
     width_input = img_input.shape[1]
+
+    # exception handling : resized_size
+    ratio_min = min(width_input, height_input) / max(width_input, height_input)
+    validation.validate_resized_size(resized_size, ratio_min, OPT)
 
     # exception handling : 
     # if setting size is equal to or less than zero
