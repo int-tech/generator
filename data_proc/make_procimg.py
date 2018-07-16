@@ -115,9 +115,16 @@ def resize_keeping_aspect_ratio(img_input, resized_size, OPT='LONG'):
 def make_square_img(img_input):
     """
     make square image (1:1) from input image
+    prepare background image which is black image
+    and paste input image on background image
 
-        :param img_input: ndarray, front image, 1ch or 3ch image
-        :return img_square: ndarray, square image
+    HACK: 
+    I use both OpenCV and PILLOW in this function to utilize paste function of PILLOW.
+    I basically develop this function with OpenCV, but cannot find paste function of OpenCV.
+    This is why I use both image processing library.
+
+        :param  img_input  : ndarray, front image, 1ch or 3ch image
+        :return img_square : ndarray, square image
     """
 
     # get image size
@@ -132,7 +139,8 @@ def make_square_img(img_input):
     img_back_pil = Image.fromarray(np.uint8(img_back))
     img_input_pil = Image.fromarray(np.uint8(img_input))
 
-    # paste (approximately center)
+    # paste input image in approximately center position
+    # pasting position depends on height and width length
     if (height_input > width_input):
         paste_position = int((height_input - width_input)/2)
         img_back_pil.paste(img_input_pil, (paste_position, 0))

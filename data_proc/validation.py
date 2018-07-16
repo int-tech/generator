@@ -35,9 +35,9 @@ def validate_resized_size(resized_size, ratio_min, OPT):
     validate if resized size is integer or not and positive number or not
     and also validate if shorter length of resized image is equal to or less than 0 or not
 
-        :param resized_size : 
-        :param ratio_min    :
-        :param OPT          :
+        :param resized_size : size that image is resized
+        :param ratio_min    : aspect ratio (lower length / higher length)
+        :param OPT          : "LONG" or "SHORT"
     """
 
     # validate positive number
