@@ -154,7 +154,7 @@ def make_square_img(img_input):
     return img_square
 
 
-def make_procimg(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
+def process_img_for_input(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
     """
     make binary or gray image by processing image that user inputs
 
@@ -243,7 +243,7 @@ if __name__ == '__main__':
 
     # convert to bin image
     # img_bin = binarize_kmeans(img_src, 28, 5, 50, 150)
-    img_square = make_procimg(img_src, 0, "BIN", 0.01, 0.2)
+    img_square = process_img_for_input(img_src, 0, "BIN", 0.01, 0.2)
     print(img_square.shape)
 
     # show image
