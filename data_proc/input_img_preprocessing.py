@@ -154,8 +154,28 @@ def make_square_img(img_input):
     return img_square
 
 
+def limit_img_size(img_input, max_img_size):
+    """
+    adjust input image size if the size exceeds upper limit
+
+        :param img_input    : ndarray, input image
+        :param max_img_size : int, upper limit of an image size
+        :return img_out     : ndarray, output image
+    """
+
+    # get input image size
+    height_input = img_input.shape[0]
+    width_input = img_input.shape[1]
+
+    # check input image size and resize if the size exceed upper limit
+    if (max(height_input, width_input) > max_img_size):
+        img_out = resize_keeping_aspect_ratio(img_input, max_img_size, 'LONG')
+    else:
+        img_out = img_input
+    return img_out
+
+
 # TODO: Referctoring of this function
-# first of all, rename argvar 'size' into output_size
 def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
     """
     make binary or gray image so that a number area is white and the other are is black
@@ -172,16 +192,15 @@ def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.
         :return img_out_square : ndarray, image which is input into neural network
     """
 
+    # get input image size
+    height_input = img_input.shape[0]
+    width_input = img_input.shape[1]
+
     # exception handling : OPT
     validation.validate_option_process_img_for_input(OPT)
 
     # if input image size is too large, resize into 1080 size
-    height_input = img_input.shape[0]
-    width_input = img_input.shape[1]
-    if (max(height_input, width_input) > 1080):
-        img_src = resize_keeping_aspect_ratio(img_input, 1080, 'LONG')
-    else:
-        img_src = img_input
+    img_src = limit_img_size(img_input, 1080)
 
     # if input is rgb image, convert rgb image to gray image
     if (len(img_src.shape) == 3):
@@ -191,7 +210,6 @@ def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.
         img_gray = img_src
 
     # convert gray image to binary image using Otsu'size method
-    # img_bin = thresh_kmeans(img_gray)
     ret, img_bin = cv2.threshold(img_gray,
                                  0,
                                  255,
