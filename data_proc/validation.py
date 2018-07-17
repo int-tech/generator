@@ -58,3 +58,14 @@ def validate_resized_size(resized_size, ratio_min, OPT):
             "Output image size is zero. "
             "Please set more larger resized_size."
         )
+
+def validate_option_process_img_for_input(OPT):
+    """
+    validate option is set correctly in the function "process_img_for_input"
+
+        :param OPT : str, "GRAY" or "BIN" 
+    """
+
+    assert (OPT == 'GRAY' or OPT == 'BIN'), (
+        "OPT must be 'GRAY' or 'BIN'."
+    )

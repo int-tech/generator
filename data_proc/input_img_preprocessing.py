@@ -12,7 +12,7 @@ def crop_four_corners_image(img_input, corner_size_ratio=1.0):
 
         :param  img_input         : ndarray, 1ch image (binary image))
         :param  corner_size_ratio : 0 - 1.0, corner size ratio which is used to judge if image is inverted
-        :return img_corners       : four corner images
+        :return img_corners       : ndarray, four corner images
     """
 
     # limit corner_size_ratio between 0 and 1
@@ -77,8 +77,8 @@ def resize_keeping_aspect_ratio(img_input, resized_size, OPT='LONG'):
     resize image keeping aspect ratio
 
         :param  img_input    : ndarray, 1ch or 3ch image
-        :param  resized_size : int    , size that we want to resize
-        :param  OPT          : str    , 'LONG' or 'SHORT', fit to longer or shorter length of image
+        :param  resized_size : int, size that we want to resize
+        :param  OPT          : str, 'LONG' or 'SHORT', fit to longer or shorter length of image
         :return img_dst      : ndarray, resized image
     """
 
@@ -154,22 +154,26 @@ def make_square_img(img_input):
     return img_square
 
 
-def process_img_for_input(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
+# TODO: Referctoring of this function
+# first of all, rename argvar 'size' into output_size
+def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
     """
-    make binary or gray image by processing image that user inputs
+    make binary or gray image so that a number area is white and the other are is black
+    by processing image that user inputs
 
-        :param img_input: ndarray, "uint8" image (rgb or gray)
-        :param output_size: int, resized number, if 0 is set, input image size is output
-        :param OPT: str, "GRAY" or "BIN", output image type
-        :param opening_ratio: 0 - 1.0, opening size
-        :return img_bin: ndarray, binarized image
+    XXX:
+    This function might not work if an input image is not 8 bit.
+    A Countermesure might not needed.
+
+        :param img_input       : ndarray, "uint8" image (rgb or gray)
+        :param output_size     : int, resized size (if 0 is set, output image size is equal to input)
+        :param OPT             : str, "GRAY" or "BIN", output image type
+        :param opening_ratio   : 0 - 1.0, opening size
+        :return img_out_square : ndarray, image which is input into neural network
     """
 
-    # FIXME: revize assert part
-    # -*- exception part -*-
-    # OPT must be 'LONG' or 'SHORT'
-    assert (OPT == 'GRAY' or OPT == 'BIN'), (
-        "OPT must be 'GRAY' or 'BIN'.")
+    # exception handling : OPT
+    validation.validate_option_process_img_for_input(OPT)
 
     # if input image size is too large, resize into 1080 size
     height_input = img_input.shape[0]
@@ -210,9 +214,9 @@ def process_img_for_input(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_
     # return gray image or binary image
     if (OPT == "GRAY"):
         # resize
-        if (size >= 1):
-            img_gray = resize_keeping_aspect_ratio(img_gray, size, 'LONG')
-            img_mask = resize_keeping_aspect_ratio(img_mask, size, 'LONG')
+        if (output_size >= 1):
+            img_gray = resize_keeping_aspect_ratio(img_gray, output_size, 'LONG')
+            img_mask = resize_keeping_aspect_ratio(img_mask, output_size, 'LONG')
         # invert black and white of gray image if flag is True
         _, flag = black_white_inverter(img_gray, bw_inv_size, ret)
         if (flag is True):
@@ -227,8 +231,8 @@ def process_img_for_input(img_input, size=0, OPT="GRAY", opening_ratio=0.01, bw_
         return img_out_square
     elif (OPT == "BIN"):
         # resize
-        if (size >= 1):
-            img_out_bin = resize_keeping_aspect_ratio(img_mask, size, 'LONG')
+        if (output_size >= 1):
+            img_out_bin = resize_keeping_aspect_ratio(img_mask, output_size, 'LONG')
         else:
             img_out_bin = img_mask
         # adjust aspect ratio of image to 1:1
@@ -243,7 +247,7 @@ if __name__ == '__main__':
 
     # convert to bin image
     # img_bin = binarize_kmeans(img_src, 28, 5, 50, 150)
-    img_square = process_img_for_input(img_src, 0, "BIN", 0.01, 0.2)
+    img_square = process_img_for_input(img_src, 0, "GRAY", 0.01, 0.2)
     print(img_square.shape)
 
     # show image
