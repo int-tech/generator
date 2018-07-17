@@ -175,6 +175,31 @@ def limit_img_size(img_input, max_img_size):
     return img_out
 
 
+def denoise_with_opening(img_input, opening_ratio):
+    """
+    denoise after binarising with opening
+
+        :param img_input     : ndarray, input image
+        :param opening_ratio : 0 - 1.0, denoising size
+        :return img_out      : ndarray, output image
+    """
+
+    # get input image size
+    height_input = img_input.shape[0]
+    width_input = img_input.shape[1]
+
+    # opening processing
+    if (opening_ratio > 1.0):
+        opening_ratio = 1.0
+    if (opening_ratio < 0.0):
+        opening_ratio = 0.0
+    opening_size = int(((width_input + height_input) / 2) * opening_ratio)
+    if (opening_size > 0):
+        kernel = np.ones((opening_size, opening_size), np.uint8)
+        img_out = cv2.morphologyEx(img_input, cv2.MORPH_OPEN, kernel)
+    return img_out
+
+
 # TODO: Referctoring of this function
 def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
     """
@@ -216,14 +241,7 @@ def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.
                                  cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # opening for eliminating small noise (erosion -> dilation)
-    if (opening_ratio > 1.0):
-        opening_ratio = 1.0
-    if (opening_ratio < 0.0):
-        opening_ratio = 0.0
-    opening_size = int(((width_input + height_input) / 2) * opening_ratio)
-    if (opening_size > 0):
-        kernel = np.ones((opening_size, opening_size), np.uint8)
-        img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, kernel)
+    img_bin = denoise_with_opening(img_bin, opening_ratio)
 
     # invert black and white pixel so that number area is white pixel
     # And this image is used as mask image
