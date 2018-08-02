@@ -2,6 +2,7 @@ import numpy as np
 import util
 import validation
 import cv2
+from matplotlib import pyplot as plt
 from PIL import Image
 
 
@@ -200,19 +201,22 @@ def denoise_with_opening(img_input, opening_ratio):
     return img_out
 
 
-# TODO: Referctoring of this function
-def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.01, bw_inv_size=0.2):
+def process_img_for_input(img_input, output_size=0, OPT="BIN", opening_ratio=0.01, bw_inv_ratio=0.2):
     """
-    make binary or gray image so that a number area is white and the other are is black
+    make input image for neural network so that a number area is white and the other is black
     by processing image that user inputs
 
     XXX:
     This function might not work if an input image is not 8 bit.
-    A Countermesure might not needed.
+    A Countermesure might be needed.
+
+    TODO:
+    OPT "GRAY" is implemented soon.
+    Pixel shading is probably related to handwriting.
 
         :param img_input       : ndarray, "uint8" image (rgb or gray)
         :param output_size     : int, resized size (if 0 is set, output image size is equal to input)
-        :param OPT             : str, "GRAY" or "BIN", output image type
+        :param OPT             : str, "BIN" or "GRAY", output image type
         :param opening_ratio   : 0 - 1.0, opening size
         :return img_out_square : ndarray, image which is input into neural network
     """
@@ -224,69 +228,74 @@ def process_img_for_input(img_input, output_size=0, OPT="GRAY", opening_ratio=0.
     # exception handling : OPT
     validation.validate_option_process_img_for_input(OPT)
 
-    # if input image size is too large, resize into 1080 size
+    # if an input image size is too large, resize into 1080 size
     img_src = limit_img_size(img_input, 1080)
 
-    # if input is rgb image, convert rgb image to gray image
+    # if an input is a rgb image, convert rgb image to gray image
     if (len(img_src.shape) == 3):
         img_gray = cv2.cvtColor(img_src, cv2.COLOR_BGR2GRAY)
-    # if input is gray image
+    # if an input is a gray image
     else:
         img_gray = img_src
 
-    # convert gray image to binary image using Otsu'size method
+    # convert a gray image to a binary image using Otsu'size method
     ret, img_bin = cv2.threshold(img_gray,
                                  0,
                                  255,
                                  cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
+    # invert black and white pixel only if a number area is not white pixel
+    # and this image is used as mask image
+    img_mask, flag_inversion_activation = black_white_inverter(img_bin, bw_inv_ratio, ret)
+
     # opening for eliminating small noise (erosion -> dilation)
-    img_bin = denoise_with_opening(img_bin, opening_ratio)
+    img_mask = denoise_with_opening(img_mask, opening_ratio)
 
-    # invert black and white pixel so that number area is white pixel
-    # And this image is used as mask image
-    img_mask, _ = black_white_inverter(img_bin, bw_inv_size, ret)
-
-    # return gray image or binary image
-    if (OPT == "GRAY"):
-        # resize
-        if (output_size >= 1):
-            img_gray = resize_keeping_aspect_ratio(img_gray, output_size, 'LONG')
-            img_mask = resize_keeping_aspect_ratio(img_mask, output_size, 'LONG')
-        # invert black and white of gray image if flag is True
-        _, flag = black_white_inverter(img_gray, bw_inv_size, ret)
-        if (flag is True):
-            img_out_gray = cv2.bitwise_not(img_gray)
-        else:
-            img_out_gray = img_gray
-        # change into black excluding number area
-        img_out_gray_mask = cv2.bitwise_and(img_out_gray, img_out_gray, mask=img_mask)
-
-        # adjust aspect ratio of image to 1:1
-        img_out_square = make_square_img(img_out_gray_mask)
-        return img_out_square
-    elif (OPT == "BIN"):
-        # resize
+    # return image translating square
+    if (OPT == "BIN"):
+        # resize an output image
         if (output_size >= 1):
             img_out_bin = resize_keeping_aspect_ratio(img_mask, output_size, 'LONG')
         else:
             img_out_bin = img_mask
-        # adjust aspect ratio of image to 1:1
+        # translate into square image
         img_out_square = make_square_img(img_out_bin)
         return img_out_square
 
 
 if __name__ == '__main__':
-    # load image (Attension: use 8bit image)
-    filename = "../../test_data/numimages/6_r.png"
-    img_src = cv2.imread(filename, cv2.IMREAD_COLOR)
+    # set parameters
+    denoising_ratio = 0.01  # denoising ratio based on image size
+    bw_inv_ratio = 0.2      # confirmed corners size to judge if color is invered or not
+    output_size = 0         # equal to input image size in the case of "0"
 
-    # convert to bin image
-    # img_bin = binarize_kmeans(img_src, 28, 5, 50, 150)
-    img_square = process_img_for_input(img_src, 0, "GRAY", 0.01, 0.2)
-    print(img_square.shape)
+    # define test images (Attension: use 8bit image)
+    img1 = "../../test_data/numimages/5.png"
+    img2 = "../../test_data/numimages/5_.png"
+    img3 = "../../test_data/numimages/6_.png"
+    img4 = "../../test_data/numimages/6_r.png"
+    img_list = np.array([img1, img2, img3, img4])
 
-    # show image
-    cv2.imshow("", img_square)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # test function "process_img_for_input()"
+    plt.figure(figsize=(2, 4))
+    for i in range(len(img_list)):
+        # load image and translate
+        filename = img_list[i]
+        img_src = cv2.imread(filename, cv2.IMREAD_COLOR)
+        img_src = cv2.cvtColor(img_src, cv2.COLOR_BGR2RGB)
+        img_dst = process_img_for_input(img_src, output_size, "BIN", denoising_ratio, bw_inv_ratio)
+
+        # plot input images
+        plt.subplot(2, 4, i+1)
+        plt.title("in:{}".format(str(i+1)))
+        plt.imshow(img_src)
+        plt.axis("off")
+        
+        # plot output images
+        plt.subplot(2, 4, i+1+4)
+        plt.gray()
+        plt.title("out:{}".format(str(i+1)))
+        plt.imshow(img_dst)
+        plt.axis("off")
+    
+    plt.show()
