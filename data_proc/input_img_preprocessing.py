@@ -260,10 +260,10 @@ def process_img_for_input(img_input, output_size=0, opening_ratio=0.01, corner_s
 
 if __name__ == '__main__':
     # set parameters
-    denoising_ratio = 0.01   # denoising ratio based on image size
-    corner_size_ratio = 0.2  # confirmed corners size to judge if color is invered or not
-    output_size = 0          # equal to input image size in the case of "0"
-    max_limitation_img_size = 1080
+    denoising_ratio = 0.01          # denoising ratio based on image size
+    corner_size_ratio = 0.2         # confirmed corners size to judge if color is invered or not
+    output_size = 0                 # equal to input image size in the case of "0"
+    max_limitation_img_size = 1080  # limit an input image size with this size
 
     # define test images (Attension: use 8bit image)
     img1 = "../../test_data/numimages/5.png"

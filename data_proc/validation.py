@@ -1,5 +1,5 @@
 """
-validation functions for make_procimg.py
+validation functions for input_img_preprocessing.py
 """
 
 def validate_corner_size_ratio_range(corner_size_ratio):

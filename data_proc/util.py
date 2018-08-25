@@ -1,5 +1,5 @@
 """
-utility functions for make_procimg.py
+utility functions for input_img_preprocessing.py
 """
 
 def limit_var_range(input_num, min, max):
