@@ -50,7 +50,7 @@ def black_white_inverter(img_input, corner_size_ratio=0.2, th_pixel_value=128):
         :param  img_input                 : ndarray, 1ch image (binary image))
         :param  corner_size_ratio         : 0 - 1.0, corner size ratio which is used to judge if image is inverted
         :return img_dst                   : ndarray, 1ch image
-        :return flag_inversion_activation : boolean, True: inverted, False: not inverted
+        :return is_inverted : boolean, True: inverted, False: not inverted
     """
 
     # exception handling : corner_size_ratio
@@ -64,13 +64,13 @@ def black_white_inverter(img_input, corner_size_ratio=0.2, th_pixel_value=128):
     if (mean_four_corner_pixel_value < th_pixel_value):
         # not inversion
         img_dst = img_input
-        flag_inversion_activation = False
+        is_inverted = False
     else:
         # inversion
         img_dst = cv2.bitwise_not(img_input)
-        flag_inversion_activation = True
+        is_inverted = True
 
-    return img_dst, flag_inversion_activation
+    return img_dst, is_inverted
 
 
 def resize_keeping_aspect_ratio(img_input, resized_size, OPT='LONG'):
@@ -201,7 +201,7 @@ def denoise_with_opening(img_input, opening_ratio):
     return img_out
 
 
-def process_img_for_input(img_input, output_size=0, OPT="BIN", opening_ratio=0.01, bw_inv_ratio=0.2):
+def process_img_for_input(img_input, output_size=0, opening_ratio=0.01, corner_size_ratio=0.2, max_img_size=1080):
     """
     make input image for neural network so that a number area is white and the other is black
     by processing image that user inputs
@@ -216,20 +216,17 @@ def process_img_for_input(img_input, output_size=0, OPT="BIN", opening_ratio=0.0
 
         :param img_input       : ndarray, "uint8" image (rgb or gray)
         :param output_size     : int, resized size (if 0 is set, output image size is equal to input)
-        :param OPT             : str, "BIN" or "GRAY", output image type
         :param opening_ratio   : 0 - 1.0, opening size
+        :param max_img_size    : int, limit an input image size with this variable
         :return img_out_square : ndarray, image which is input into neural network
     """
-
+ 
     # get input image size
     height_input = img_input.shape[0]
     width_input = img_input.shape[1]
 
-    # exception handling : OPT
-    validation.validate_option_process_img_for_input(OPT)
-
     # if an input image size is too large, resize into 1080 size
-    img_src = limit_img_size(img_input, 1080)
+    img_src = limit_img_size(img_input, max_img_size)
 
     # if an input is a rgb image, convert rgb image to gray image
     if (len(img_src.shape) == 3):
@@ -246,28 +243,27 @@ def process_img_for_input(img_input, output_size=0, OPT="BIN", opening_ratio=0.0
 
     # invert black and white pixel only if a number area is not white pixel
     # and this image is used as mask image
-    img_mask, flag_inversion_activation = black_white_inverter(img_bin, bw_inv_ratio, ret)
+    img_mask, _ = black_white_inverter(img_bin, corner_size_ratio, ret)
 
     # opening for eliminating small noise (erosion -> dilation)
     img_mask = denoise_with_opening(img_mask, opening_ratio)
 
-    # return image translating square
-    if (OPT == "BIN"):
-        # resize an output image
-        if (output_size >= 1):
-            img_out_bin = resize_keeping_aspect_ratio(img_mask, output_size, 'LONG')
-        else:
-            img_out_bin = img_mask
-        # translate into square image
-        img_out_square = make_square_img(img_out_bin)
-        return img_out_square
+    # resize an output image
+    if (output_size >= 1):
+        img_out_bin = resize_keeping_aspect_ratio(img_mask, output_size, 'LONG')
+    else:
+        img_out_bin = img_mask
+    # translate into square image
+    img_out_square = make_square_img(img_out_bin)
+    return img_out_square
 
 
 if __name__ == '__main__':
     # set parameters
-    denoising_ratio = 0.01  # denoising ratio based on image size
-    bw_inv_ratio = 0.2      # confirmed corners size to judge if color is invered or not
-    output_size = 0         # equal to input image size in the case of "0"
+    denoising_ratio = 0.01   # denoising ratio based on image size
+    corner_size_ratio = 0.2  # confirmed corners size to judge if color is invered or not
+    output_size = 0          # equal to input image size in the case of "0"
+    max_limitation_img_size = 1080
 
     # define test images (Attension: use 8bit image)
     img1 = "../../test_data/numimages/5.png"
@@ -283,7 +279,7 @@ if __name__ == '__main__':
         filename = img_list[i]
         img_src = cv2.imread(filename, cv2.IMREAD_COLOR)
         img_src = cv2.cvtColor(img_src, cv2.COLOR_BGR2RGB)
-        img_dst = process_img_for_input(img_src, output_size, "BIN", denoising_ratio, bw_inv_ratio)
+        img_dst = process_img_for_input(img_src, output_size, denoising_ratio, corner_size_ratio, max_limitation_img_size)
 
         # plot input images
         plt.subplot(2, 4, i+1)
